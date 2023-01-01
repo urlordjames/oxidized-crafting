@@ -1,0 +1,6 @@
+[package]
+name = "oxidized-crafting"
+version = "0.1.0"
+authors = ["urlordjames (James Connolly) <32751441+urlordjames@users.noreply.github.com>"]
+license = "AGPL-3.0-only"
+edition = "2021"
