@@ -9,6 +9,9 @@ use handshake::Handshake;
 mod state;
 use state::State;
 
+mod status;
+use status::StatusResponse;
+
 fn main() {
 	let listener = TcpListener::bind("127.0.0.1:25565").unwrap();
 
@@ -29,9 +32,11 @@ fn handle_client(stream: &mut TcpStream) {
 				let handshake = Handshake::read(&mut packet);
 				println!("{:?}", handshake);
 
-				status_respond(stream);
-
 				state = handshake.next_state;
+			},
+			(0x00, State::Status) => {
+				let resp = StatusResponse::default();
+				resp.write(stream);
 			},
 			(id, state) => todo!("implement packet with id {:x} in state {:?}", id, state)
 		}
