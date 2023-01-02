@@ -2,5 +2,6 @@
 pub enum State {
 	Handshake,
 	Status,
-	Login
+	Login,
+	Play
 }
