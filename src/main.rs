@@ -16,6 +16,12 @@ use status::StatusResponse;
 mod login;
 use login::{LoginStart, LoginSuccess};
 
+pub mod nbt;
+pub mod position;
+
+mod play;
+use play::Login;
+
 fn main() {
 	let listener = TcpListener::bind("127.0.0.1:25565").unwrap();
 
@@ -68,6 +74,9 @@ fn handle_client(stream: &mut TcpStream) {
 				};
 
 				login_success.write(stream);
+
+				let login = Login::default();
+				login.write(stream);
 			},
 			(_, State::Play(_)) => {
 				let mut reason_buf = vec![];

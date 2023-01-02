@@ -68,6 +68,13 @@ pub fn read_uuid<P: Read>(stream: &mut P) -> u128 {
 	u128::from_be_bytes(buf)
 }
 
+pub fn read_int<P: Read>(stream: &mut P) -> i32 {
+	let mut buf = [0; 4];
+	stream.read_exact(&mut buf).unwrap();
+
+	i32::from_be_bytes(buf)
+}
+
 pub fn write_varint<B: Write>(buffer: &mut B, value: u64) {
 	const CONTINUE_BIT: u64 = 0x80;
 	const SEGMENT_MASK: u64 = 0x7F;
@@ -113,6 +120,12 @@ pub fn write_bool<B: Write>(buffer: &mut B, value: bool) {
 }
 
 pub fn write_uuid<B: Write>(buffer: &mut B, value: u128) {
+	let bytes = value.to_be_bytes();
+
+	buffer.write_all(&bytes).unwrap();
+}
+
+pub fn write_int<B: Write>(buffer: &mut B, value: i32) {
 	let bytes = value.to_be_bytes();
 
 	buffer.write_all(&bytes).unwrap();
@@ -186,6 +199,18 @@ fn test_uuid() {
 	write_uuid(&mut buf, val);
 	let mut cursor = std::io::Cursor::new(buf);
 	let deserialized = read_uuid(&mut cursor);
+
+	assert_eq!(val, deserialized);
+}
+
+#[test]
+fn test_int() {
+	let val = 12345;
+	let mut buf = vec![];
+
+	write_int(&mut buf, val);
+	let mut cursor = std::io::Cursor::new(buf);
+	let deserialized = read_int(&mut cursor);
 
 	assert_eq!(val, deserialized);
 }
