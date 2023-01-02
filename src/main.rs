@@ -1,7 +1,8 @@
 use std::net::{TcpListener, TcpStream};
 
 mod packet;
-use packet::Packet;
+use packet::{Packet, write_packet};
+use packet::packet_data::{read_long, write_long};
 
 mod handshake;
 use handshake::Handshake;
@@ -39,6 +40,15 @@ fn handle_client(stream: &mut TcpStream) {
 			(0x00, State::Status) => {
 				let resp = StatusResponse::default();
 				resp.write(stream);
+			},
+			(0x01, State::Status) => {
+				let ping_data = read_long(&mut packet.data);
+
+				let mut pong_buf = vec![];
+				write_long(&mut pong_buf, ping_data);
+
+				write_packet(stream, 0x01, pong_buf);
+				return;
 			},
 			(id, state) => {
 				println!("TODO: implement packet with id {:x} in state {:?}", id, state);

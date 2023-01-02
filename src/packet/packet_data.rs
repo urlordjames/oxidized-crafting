@@ -43,6 +43,13 @@ pub fn read_short<P: Read>(stream: &mut P) -> u16 {
 	u16::from_be_bytes(buf)
 }
 
+pub fn read_long<P: Read>(stream: &mut P) -> i64 {
+	let mut buf = [0; 8];
+	stream.read_exact(&mut buf).unwrap();
+
+	i64::from_be_bytes(buf)
+}
+
 pub fn write_varint<B: Write>(buffer: &mut B, value: u64) {
 	const CONTINUE_BIT: u64 = 0x80;
 	const SEGMENT_MASK: u64 = 0x7F;
@@ -68,6 +75,18 @@ pub fn write_string<B: Write>(buffer: &mut B, value: &str) {
 	buffer.write_all(bytes).unwrap();
 }
 
+pub fn write_short<B: Write>(buffer: &mut B, value: u16) {
+	let bytes = value.to_be_bytes();
+
+	buffer.write_all(&bytes).unwrap();
+}
+
+pub fn write_long<B: Write>(buffer: &mut B, value: i64) {
+	let bytes = value.to_be_bytes();
+
+	buffer.write_all(&bytes).unwrap();
+}
+
 #[test]
 fn test_varint() {
 	let val = 12345678;
@@ -88,6 +107,30 @@ fn test_string() {
 	write_string(&mut buf, val);
 	let mut cursor = std::io::Cursor::new(buf);
 	let deserialized = read_string(&mut cursor);
+
+	assert_eq!(val, deserialized);
+}
+
+#[test]
+fn test_short() {
+	let val = u16::MAX;
+	let mut buf = vec![];
+
+	write_short(&mut buf, val);
+	let mut cursor = std::io::Cursor::new(buf);
+	let deserialized = read_short(&mut cursor);
+
+	assert_eq!(val, deserialized);
+}
+
+#[test]
+fn test_long() {
+	let val = 12345678;
+	let mut buf = vec![];
+
+	write_long(&mut buf, val);
+	let mut cursor = std::io::Cursor::new(buf);
+	let deserialized = read_long(&mut cursor);
 
 	assert_eq!(val, deserialized);
 }
