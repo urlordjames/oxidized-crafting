@@ -29,13 +29,14 @@ struct Text {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StatusResponse {
 	version: Version,
 	players: Players,
 	description: Text,
-	favicon: String,
-	previewsChat: bool,
-	enforcesSecureChat: bool
+	favicon: Option<String>,
+	previews_chat: bool,
+	enforces_secure_chat: bool
 }
 
 impl std::default::Default for StatusResponse {
@@ -46,16 +47,16 @@ impl std::default::Default for StatusResponse {
 				protocol: 761
 			},
 			players: Players {
-				max: u64::MAX,
+				max: 20,
 				online: 0,
 				sample: vec![]
 			},
 			description: Text {
 				text: String::from("oxidized crafting")
 			},
-			favicon: String::new(),
-			previewsChat: false,
-			enforcesSecureChat: false
+			favicon: None,
+			previews_chat: false,
+			enforces_secure_chat: false
 		}
 	}
 }

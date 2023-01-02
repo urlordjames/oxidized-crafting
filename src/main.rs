@@ -42,7 +42,3 @@ fn handle_client(stream: &mut TcpStream) {
 		}
 	}
 }
-
-fn status_respond(_stream: &mut TcpStream) {
-	todo!("respond to ping")
-}
