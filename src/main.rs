@@ -21,6 +21,8 @@ fn main() {
 }
 
 fn handle_client(stream: &mut TcpStream) {
+	println!("new connection");
+
 	let mut state = State::Handshake;
 
 	loop {
@@ -38,7 +40,10 @@ fn handle_client(stream: &mut TcpStream) {
 				let resp = StatusResponse::default();
 				resp.write(stream);
 			},
-			(id, state) => todo!("implement packet with id {:x} in state {:?}", id, state)
+			(id, state) => {
+				println!("TODO: implement packet with id {:x} in state {:?}", id, state);
+				return;
+			}
 		}
 	}
 }
