@@ -1,6 +1,6 @@
 use crate::packet::Packet;
 use crate::packet::packet_data::{read_varint, read_string, read_short};
-use crate::State;
+use crate::{State, LoginState};
 
 #[derive(Debug)]
 pub struct Handshake {
@@ -22,7 +22,7 @@ impl Handshake {
 		let port = read_short(&mut packet.data);
 		let next_state = match read_varint(&mut packet.data) {
 			1 => State::Status,
-			2 => State::Login,
+			2 => State::Login(LoginState::PostHandshake),
 			_ => panic!("invalid next_state")
 		};
 

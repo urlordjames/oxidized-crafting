@@ -50,6 +50,24 @@ pub fn read_long<P: Read>(stream: &mut P) -> i64 {
 	i64::from_be_bytes(buf)
 }
 
+pub fn read_bool<P: Read>(stream: &mut P) -> bool {
+	let mut buf = [0; 1];
+	stream.read_exact(&mut buf).unwrap();
+
+	match buf[0] {
+		0x00 => false,
+		0x01 => true,
+		_ => panic!("invalid bool")
+	}
+}
+
+pub fn read_uuid<P: Read>(stream: &mut P) -> u128 {
+	let mut buf = [0; 16];
+	stream.read_exact(&mut buf).unwrap();
+
+	u128::from_be_bytes(buf)
+}
+
 pub fn write_varint<B: Write>(buffer: &mut B, value: u64) {
 	const CONTINUE_BIT: u64 = 0x80;
 	const SEGMENT_MASK: u64 = 0x7F;
@@ -82,6 +100,19 @@ pub fn write_short<B: Write>(buffer: &mut B, value: u16) {
 }
 
 pub fn write_long<B: Write>(buffer: &mut B, value: i64) {
+	let bytes = value.to_be_bytes();
+
+	buffer.write_all(&bytes).unwrap();
+}
+
+pub fn write_bool<B: Write>(buffer: &mut B, value: bool) {
+	buffer.write_all(&[match value {
+		false => 0x00,
+		true => 0x01
+	}]).unwrap();
+}
+
+pub fn write_uuid<B: Write>(buffer: &mut B, value: u128) {
 	let bytes = value.to_be_bytes();
 
 	buffer.write_all(&bytes).unwrap();
@@ -131,6 +162,30 @@ fn test_long() {
 	write_long(&mut buf, val);
 	let mut cursor = std::io::Cursor::new(buf);
 	let deserialized = read_long(&mut cursor);
+
+	assert_eq!(val, deserialized);
+}
+
+#[test]
+fn test_bool() {
+	let val = true;
+	let mut buf = vec![];
+
+	write_bool(&mut buf, val);
+	let mut cursor = std::io::Cursor::new(buf);
+	let deserialized = read_bool(&mut cursor);
+
+	assert_eq!(val, deserialized);
+}
+
+#[test]
+fn test_uuid() {
+	let val = 9876543210123456789;
+	let mut buf = vec![];
+
+	write_uuid(&mut buf, val);
+	let mut cursor = std::io::Cursor::new(buf);
+	let deserialized = read_uuid(&mut cursor);
 
 	assert_eq!(val, deserialized);
 }

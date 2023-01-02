@@ -8,10 +8,13 @@ mod handshake;
 use handshake::Handshake;
 
 mod state;
-use state::State;
+use state::{State, LoginState, PlayerInfo};
 
 mod status;
 use status::StatusResponse;
+
+mod login;
+use login::{LoginStart, LoginSuccess};
 
 fn main() {
 	let listener = TcpListener::bind("127.0.0.1:25565").unwrap();
@@ -30,7 +33,7 @@ fn handle_client(stream: &mut TcpStream) {
 		let mut packet = Packet::read(stream);
 		println!("{:?}", packet);
 
-		match (packet.id, state) {
+		match (packet.id, &state) {
 			(0x00, State::Handshake) => {
 				let handshake = Handshake::read(&mut packet);
 				println!("{:?}", handshake);
@@ -50,16 +53,23 @@ fn handle_client(stream: &mut TcpStream) {
 				write_packet(stream, 0x01, pong_buf);
 				return;
 			},
-			(_, State::Login) => {
-				let mut reason_buf = vec![];
-				write_string(&mut reason_buf, r#"{
-					"text": "TODO: implement login state"
-				}"#);
+			(0x00, State::Login(LoginState::PostHandshake)) => {
+				let login_start = LoginStart::read(&mut packet);
+				println!("{:?}", login_start);
 
-				write_packet(stream, 0x00, reason_buf);
-				return;
+				state = State::Play(PlayerInfo {
+					name: login_start.name,
+					uuid: login_start.uuid
+				});
+
+				let login_success = LoginSuccess {
+					uuid: login_start.uuid.unwrap(),
+					username: state.username().unwrap()
+				};
+
+				login_success.write(stream);
 			},
-			(_, State::Play) => {
+			(_, State::Play(_)) => {
 				let mut reason_buf = vec![];
 				write_string(&mut reason_buf, r#"{
 					"text": "TODO: implement play state"
