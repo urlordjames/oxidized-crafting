@@ -131,86 +131,86 @@ pub async fn write_int<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: i32) {
 	buffer.write_all(&bytes).await.unwrap();
 }
 
-#[test]
-fn test_varint() {
+#[tokio::test]
+async fn test_varint() {
 	let val = 12345678;
 	let mut buf = vec![];
 
-	write_varint(&mut buf, val);
+	write_varint(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_varint(&mut cursor);
+	let deserialized = read_varint(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }
 
-#[test]
-fn test_string() {
+#[tokio::test]
+async fn test_string() {
 	let val = "hello gamers";
 	let mut buf = vec![];
 
-	write_string(&mut buf, val);
+	write_string(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_string(&mut cursor);
+	let deserialized = read_string(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }
 
-#[test]
-fn test_short() {
+#[tokio::test]
+async fn test_short() {
 	let val = u16::MAX;
 	let mut buf = vec![];
 
-	write_short(&mut buf, val);
+	write_short(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_short(&mut cursor);
+	let deserialized = read_short(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }
 
-#[test]
-fn test_long() {
+#[tokio::test]
+async fn test_long() {
 	let val = 12345678;
 	let mut buf = vec![];
 
-	write_long(&mut buf, val);
+	write_long(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_long(&mut cursor);
+	let deserialized = read_long(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }
 
-#[test]
-fn test_bool() {
+#[tokio::test]
+async fn test_bool() {
 	let val = true;
 	let mut buf = vec![];
 
-	write_bool(&mut buf, val);
+	write_bool(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_bool(&mut cursor);
+	let deserialized = read_bool(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }
 
-#[test]
-fn test_uuid() {
+#[tokio::test]
+async fn test_uuid() {
 	let val = 9876543210123456789;
 	let mut buf = vec![];
 
-	write_uuid(&mut buf, val);
+	write_uuid(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_uuid(&mut cursor);
+	let deserialized = read_uuid(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }
 
-#[test]
-fn test_int() {
+#[tokio::test]
+async fn test_int() {
 	let val = 12345;
 	let mut buf = vec![];
 
-	write_int(&mut buf, val);
+	write_int(&mut buf, val).await;
 	let mut cursor = std::io::Cursor::new(buf);
-	let deserialized = read_int(&mut cursor);
+	let deserialized = read_int(&mut cursor).await;
 
 	assert_eq!(val, deserialized);
 }

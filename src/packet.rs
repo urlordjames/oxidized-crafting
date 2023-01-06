@@ -38,17 +38,17 @@ pub async fn write_packet<B: AsyncWriteExt + Unpin>(buffer: &mut B, id: u64, mut
 	buffer.write_all(&buf).await.unwrap();
 }
 
-#[test]
-fn test_packet() {
+#[tokio::test]
+async fn test_packet() {
 	let data = 56789;
 	let mut data_buf = vec![];
-	write_varint(&mut data_buf, data);
+	write_varint(&mut data_buf, data).await;
 
 	let mut packet_buf = vec![];
-	write_packet(&mut packet_buf, 0x1234, data_buf);
+	write_packet(&mut packet_buf, 0x1234, data_buf).await;
 
 	let mut cursor = std::io::Cursor::new(packet_buf);
-	let mut packet = Packet::read(&mut cursor);
+	let mut packet = Packet::read(&mut cursor).await;
 
-	assert_eq!(data, read_varint(&mut packet.data));
+	assert_eq!(data, read_varint(&mut packet.data).await);
 }

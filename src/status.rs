@@ -69,20 +69,20 @@ impl StatusResponse {
 	}
 }
 
-#[test]
-fn test_status() {
+#[tokio::test]
+async fn test_status() {
 	use crate::packet::Packet;
 	use crate::packet::packet_data::read_string;
 
 	let status = StatusResponse::default();
 	let mut packet_buf = vec![];
-	status.write(&mut packet_buf);
+	status.write(&mut packet_buf).await;
 
 	let mut cursor = std::io::Cursor::new(packet_buf);
-	let mut packet = Packet::read(&mut cursor);
+	let mut packet = Packet::read(&mut cursor).await;
 
 	let status_json = serde_json::to_string(&status).unwrap();
 
 	assert_eq!(0x00, packet.id);
-	assert_eq!(status_json, read_string(&mut packet.data));
+	assert_eq!(status_json, read_string(&mut packet.data).await);
 }
