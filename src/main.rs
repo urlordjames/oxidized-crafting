@@ -1,5 +1,8 @@
 use std::net::{TcpListener, TcpStream};
 
+mod lan;
+use lan::broadcast_lan;
+
 mod packet;
 use packet::{Packet, write_packet};
 use packet::packet_data::{read_long, write_long};
@@ -26,6 +29,8 @@ use play::Login;
 
 fn main() {
 	let listener = TcpListener::bind("0.0.0.0:25565").unwrap();
+
+	broadcast_lan();
 
 	for stream in listener.incoming() {
 		handle_client(&mut stream.unwrap());
