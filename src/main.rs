@@ -16,14 +16,13 @@ use status::StatusResponse;
 mod login;
 use login::{LoginStart, LoginSuccess};
 
-pub mod nbt;
 pub mod position;
 
 mod play;
 use play::Login;
 
 fn main() {
-	let listener = TcpListener::bind("127.0.0.1:25565").unwrap();
+	let listener = TcpListener::bind("0.0.0.0:25565").unwrap();
 
 	for stream in listener.incoming() {
 		handle_client(&mut stream.unwrap());

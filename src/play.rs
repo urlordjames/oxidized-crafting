@@ -1,7 +1,10 @@
-use crate::nbt::Nbt;
 use crate::position::Location;
 use crate::packet::write_packet;
 use crate::packet::packet_data::{write_int, write_bool, write_varint, write_string, write_long};
+use quartz_nbt::io::Flavor;
+
+mod registry_codec;
+use registry_codec::RegistryCodec;
 
 use std::io::Write;
 
@@ -49,7 +52,7 @@ pub struct Login {
 	gamemode: Gamemode,
 	previous_gamemode: OptionalGamemode,
 	dimensions: Vec<String>,
-	registry_codec: Nbt,
+	registry_codec: RegistryCodec,
 	current_dimension_type: String,
 	current_dimension_name: String,
 	hashed_seed: i64,
@@ -70,7 +73,7 @@ impl std::default::Default for Login {
 			gamemode: Gamemode::Spectator,
 			previous_gamemode: OptionalGamemode::None,
 			dimensions: vec![],
-			registry_codec: Nbt::Empty, // bruh
+			registry_codec: RegistryCodec::default(),
 			current_dimension_type: String::from("minecraft:overworld"),
 			current_dimension_name: String::from("overworld"),
 			hashed_seed: 0,
@@ -94,7 +97,7 @@ impl Login {
 		self.previous_gamemode.write(&mut packet_data);
 		write_varint(&mut packet_data, self.dimensions.len() as u64);
 		assert_eq!(self.dimensions.len(), 0); // lets just ignore this for now...
-		self.registry_codec.write(&mut packet_data);
+		quartz_nbt::serde::serialize_into(&mut packet_data, &self.registry_codec, None, Flavor::Uncompressed).unwrap();
 		write_string(&mut packet_data, &self.current_dimension_type);
 		write_string(&mut packet_data, &self.current_dimension_name);
 		write_long(&mut packet_data, self.hashed_seed);
