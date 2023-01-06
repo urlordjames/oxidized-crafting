@@ -11,16 +11,16 @@ pub struct Handshake {
 }
 
 impl Handshake {
-	pub fn read(packet: &mut Packet) -> Self {
+	pub async fn read(packet: &mut Packet) -> Self {
 		assert_eq!(packet.id, 0x00);
 
-		let protocol_version = read_varint(&mut packet.data);
+		let protocol_version = read_varint(&mut packet.data).await;
 
 		assert_eq!(protocol_version, 761);
 
-		let address = read_string(&mut packet.data);
-		let port = read_short(&mut packet.data);
-		let next_state = match read_varint(&mut packet.data) {
+		let address = read_string(&mut packet.data).await;
+		let port = read_short(&mut packet.data).await;
+		let next_state = match read_varint(&mut packet.data).await {
 			1 => State::Status,
 			2 => State::Login(LoginState::PostHandshake),
 			_ => panic!("invalid next_state")

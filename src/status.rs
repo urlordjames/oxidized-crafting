@@ -2,7 +2,7 @@ use crate::packet::write_packet;
 use crate::packet::packet_data::write_string;
 use crate::text::Text;
 
-use std::io::Write;
+use tokio::io::AsyncWriteExt;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -58,14 +58,14 @@ impl std::default::Default for StatusResponse {
 }
 
 impl StatusResponse {
-	pub fn write<B: Write>(&self, buffer: &mut B) {
+	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
 		let stringified = serde_json::to_string(self).unwrap();
 		println!("{}", stringified);
 
 		let mut packet_data = vec![];
-		write_string(&mut packet_data, &stringified);
+		write_string(&mut packet_data, &stringified).await;
 
-		write_packet(buffer, 0x00, packet_data);
+		write_packet(buffer, 0x00, packet_data).await;
 	}
 }
 

@@ -1,4 +1,4 @@
-use std::net::{TcpListener, TcpStream};
+use tokio::net::{TcpListener, TcpStream};
 
 mod lan;
 use lan::broadcast_lan;
@@ -27,47 +27,51 @@ pub mod position;
 mod play;
 use play::Login;
 
-fn main() {
-	let listener = TcpListener::bind("0.0.0.0:25565").unwrap();
+#[tokio::main]
+async fn main() {
+	let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
 
 	broadcast_lan();
 
-	for stream in listener.incoming() {
-		handle_client(&mut stream.unwrap());
+	loop {
+		let (mut stream, _) = listener.accept().await.unwrap();
+		tokio::spawn(async move {
+			handle_client(&mut stream).await;
+		});
 	}
 }
 
-fn handle_client(stream: &mut TcpStream) {
+async fn handle_client(stream: &mut TcpStream) {
 	println!("new connection");
 
 	let mut state = State::Handshake;
 
 	loop {
-		let mut packet = Packet::read(stream);
+		let mut packet = Packet::read(stream).await;
 		println!("{:?}", packet);
 
 		match (packet.id, &state) {
 			(0x00, State::Handshake) => {
-				let handshake = Handshake::read(&mut packet);
+				let handshake = Handshake::read(&mut packet).await;
 				println!("{:?}", handshake);
 
 				state = handshake.next_state;
 			},
 			(0x00, State::Status) => {
 				let resp = StatusResponse::default();
-				resp.write(stream);
+				resp.write(stream).await;
 			},
 			(0x01, State::Status) => {
-				let ping_data = read_long(&mut packet.data);
+				let ping_data = read_long(&mut packet.data).await;
 
 				let mut pong_buf = vec![];
-				write_long(&mut pong_buf, ping_data);
+				write_long(&mut pong_buf, ping_data).await;
 
-				write_packet(stream, 0x01, pong_buf);
+				write_packet(stream, 0x01, pong_buf).await;
 				return;
 			},
 			(0x00, State::Login(LoginState::PostHandshake)) => {
-				let login_start = LoginStart::read(&mut packet);
+				let login_start = LoginStart::read(&mut packet).await;
 				println!("{:?}", login_start);
 
 				state = State::Play(PlayerInfo {
@@ -80,15 +84,15 @@ fn handle_client(stream: &mut TcpStream) {
 					username: state.username().unwrap()
 				};
 
-				login_success.write(stream);
+				login_success.write(stream).await;
 
 				let login = Login::default();
-				login.write(stream);
+				login.write(stream).await;
 			},
 			(_, State::Play(_)) => {
 				let reason = Text::from("TODO: implement play state");
 
-				write_packet(stream, 0x17, serde_json::to_vec(&reason).unwrap());
+				write_packet(stream, 0x17, serde_json::to_vec(&reason).unwrap()).await;
 				return;
 			},
 			(id, state) => todo!("TODO: implement packet with id {:x} in state {:?}", id, state)

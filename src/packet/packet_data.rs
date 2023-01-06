@@ -1,6 +1,6 @@
-use std::io::{Read, Write};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-pub fn read_varint<P: Read>(stream: &mut P) -> u64 {
+pub async fn read_varint<P: AsyncReadExt + Unpin>(stream: &mut P) -> u64 {
 	const CONTINUE_BIT: u8 = 0x80;
 	const SEGMENT_MASK: u8 = 0x7F;
 
@@ -9,7 +9,7 @@ pub fn read_varint<P: Read>(stream: &mut P) -> u64 {
 	let mut buf = [0; 1];
 
 	loop {
-		stream.read_exact(&mut buf).unwrap();
+		stream.read_exact(&mut buf).await.unwrap();
 
 		value |= u64::from(buf[0] & SEGMENT_MASK).to_le() << position;
 
@@ -27,32 +27,32 @@ pub fn read_varint<P: Read>(stream: &mut P) -> u64 {
 	value
 }
 
-pub fn read_string<P: Read>(stream: &mut P) -> String {
-	let length = read_varint(stream);
+pub async fn read_string<P: AsyncReadExt + Unpin>(stream: &mut P) -> String {
+	let length = read_varint(stream).await;
 	let mut buf = vec![0; length as usize];
 
-	stream.read_exact(&mut buf).unwrap();
+	stream.read_exact(&mut buf).await.unwrap();
 
 	String::from_utf8(buf).unwrap()
 }
 
-pub fn read_short<P: Read>(stream: &mut P) -> u16 {
+pub async fn read_short<P: AsyncReadExt + Unpin>(stream: &mut P) -> u16 {
 	let mut buf = [0; 2];
-	stream.read_exact(&mut buf).unwrap();
+	stream.read_exact(&mut buf).await.unwrap();
 
 	u16::from_be_bytes(buf)
 }
 
-pub fn read_long<P: Read>(stream: &mut P) -> i64 {
+pub async fn read_long<P: AsyncReadExt + Unpin>(stream: &mut P) -> i64 {
 	let mut buf = [0; 8];
-	stream.read_exact(&mut buf).unwrap();
+	stream.read_exact(&mut buf).await.unwrap();
 
 	i64::from_be_bytes(buf)
 }
 
-pub fn read_bool<P: Read>(stream: &mut P) -> bool {
+pub async fn read_bool<P: AsyncReadExt + Unpin>(stream: &mut P) -> bool {
 	let mut buf = [0; 1];
-	stream.read_exact(&mut buf).unwrap();
+	stream.read_exact(&mut buf).await.unwrap();
 
 	match buf[0] {
 		0x00 => false,
@@ -61,21 +61,21 @@ pub fn read_bool<P: Read>(stream: &mut P) -> bool {
 	}
 }
 
-pub fn read_uuid<P: Read>(stream: &mut P) -> u128 {
+pub async fn read_uuid<P: AsyncReadExt + Unpin>(stream: &mut P) -> u128 {
 	let mut buf = [0; 16];
-	stream.read_exact(&mut buf).unwrap();
+	stream.read_exact(&mut buf).await.unwrap();
 
 	u128::from_be_bytes(buf)
 }
 
-pub fn read_int<P: Read>(stream: &mut P) -> i32 {
+pub async fn read_int<P: AsyncReadExt + Unpin>(stream: &mut P) -> i32 {
 	let mut buf = [0; 4];
-	stream.read_exact(&mut buf).unwrap();
+	stream.read_exact(&mut buf).await.unwrap();
 
 	i32::from_be_bytes(buf)
 }
 
-pub fn write_varint<B: Write>(buffer: &mut B, value: u64) {
+pub async fn write_varint<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u64) {
 	const CONTINUE_BIT: u64 = 0x80;
 	const SEGMENT_MASK: u64 = 0x7F;
 
@@ -83,52 +83,52 @@ pub fn write_varint<B: Write>(buffer: &mut B, value: u64) {
 
 	loop {
 		if (value & !SEGMENT_MASK) == 0 {
-			buffer.write_all(&[value as u8]).unwrap();
+			buffer.write_all(&[value as u8]).await.unwrap();
 			return;
 		}
 
-		buffer.write_all(&[((value & SEGMENT_MASK) | CONTINUE_BIT) as u8]).unwrap();
+		buffer.write_all(&[((value & SEGMENT_MASK) | CONTINUE_BIT) as u8]).await.unwrap();
 
 		value >>= 7;
 	}
 }
 
-pub fn write_string<B: Write>(buffer: &mut B, value: &str) {
+pub async fn write_string<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: &str) {
 	let bytes = value.as_bytes();
 
-	write_varint(buffer, bytes.len() as u64);
-	buffer.write_all(bytes).unwrap();
+	write_varint(buffer, bytes.len() as u64).await;
+	buffer.write_all(bytes).await.unwrap();
 }
 
-pub fn write_short<B: Write>(buffer: &mut B, value: u16) {
+pub async fn write_short<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u16) {
 	let bytes = value.to_be_bytes();
 
-	buffer.write_all(&bytes).unwrap();
+	buffer.write_all(&bytes).await.unwrap();
 }
 
-pub fn write_long<B: Write>(buffer: &mut B, value: i64) {
+pub async fn write_long<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: i64) {
 	let bytes = value.to_be_bytes();
 
-	buffer.write_all(&bytes).unwrap();
+	buffer.write_all(&bytes).await.unwrap();
 }
 
-pub fn write_bool<B: Write>(buffer: &mut B, value: bool) {
+pub async fn write_bool<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: bool) {
 	buffer.write_all(&[match value {
 		false => 0x00,
 		true => 0x01
-	}]).unwrap();
+	}]).await.unwrap();
 }
 
-pub fn write_uuid<B: Write>(buffer: &mut B, value: u128) {
+pub async fn write_uuid<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u128) {
 	let bytes = value.to_be_bytes();
 
-	buffer.write_all(&bytes).unwrap();
+	buffer.write_all(&bytes).await.unwrap();
 }
 
-pub fn write_int<B: Write>(buffer: &mut B, value: i32) {
+pub async fn write_int<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: i32) {
 	let bytes = value.to_be_bytes();
 
-	buffer.write_all(&bytes).unwrap();
+	buffer.write_all(&bytes).await.unwrap();
 }
 
 #[test]

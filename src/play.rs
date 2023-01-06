@@ -6,7 +6,7 @@ use quartz_nbt::io::Flavor;
 mod registry_codec;
 use registry_codec::RegistryCodec;
 
-use std::io::Write;
+use tokio::io::AsyncWriteExt;
 
 enum Gamemode {
 	Survival,
@@ -25,8 +25,8 @@ impl Gamemode {
 		}
 	}
 
-	pub fn write<B: Write>(&self, buffer: &mut B) {
-		buffer.write_all(&[self.get_id()]).unwrap();
+	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
+		buffer.write_all(&[self.get_id()]).await.unwrap();
 	}
 }
 
@@ -36,13 +36,13 @@ enum OptionalGamemode {
 }
 
 impl OptionalGamemode {
-	pub fn write<B: Write>(&self, buffer: &mut B) {
+	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
 		let id: i8 = match self {
 			OptionalGamemode::None => -1,
 			OptionalGamemode::Gamemode(gamemode) => gamemode.get_id() as i8,
 		};
 
-		buffer.write_all(&[id as u8]).unwrap();
+		buffer.write_all(&[id as u8]).await.unwrap();
 	}
 }
 
@@ -89,34 +89,34 @@ impl std::default::Default for Login {
 }
 
 impl Login {
-	pub fn write<B: Write>(&self, buffer: &mut B) {
+	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
 		let mut packet_data = vec![];
-		write_int(&mut packet_data, self.entity_id);
-		write_bool(&mut packet_data, self.is_hardcore);
-		self.gamemode.write(&mut packet_data);
-		self.previous_gamemode.write(&mut packet_data);
-		write_varint(&mut packet_data, self.dimensions.len() as u64);
+		write_int(&mut packet_data, self.entity_id).await;
+		write_bool(&mut packet_data, self.is_hardcore).await;
+		self.gamemode.write(&mut packet_data).await;
+		self.previous_gamemode.write(&mut packet_data).await;
+		write_varint(&mut packet_data, self.dimensions.len() as u64).await;
 		assert_eq!(self.dimensions.len(), 0); // lets just ignore this for now...
 		quartz_nbt::serde::serialize_into(&mut packet_data, &self.registry_codec, None, Flavor::Uncompressed).unwrap();
-		write_string(&mut packet_data, &self.current_dimension_type);
-		write_string(&mut packet_data, &self.current_dimension_name);
-		write_long(&mut packet_data, self.hashed_seed);
-		write_varint(&mut packet_data, 0);
-		write_varint(&mut packet_data, self.view_distance);
-		write_varint(&mut packet_data, self.simulation_distance);
-		write_bool(&mut packet_data, self.reduced_debug_info);
-		write_bool(&mut packet_data, self.enable_respawn_screen);
-		write_bool(&mut packet_data, self.debug_world);
-		write_bool(&mut packet_data, self.is_flat);
+		write_string(&mut packet_data, &self.current_dimension_type).await;
+		write_string(&mut packet_data, &self.current_dimension_name).await;
+		write_long(&mut packet_data, self.hashed_seed).await;
+		write_varint(&mut packet_data, 0).await;
+		write_varint(&mut packet_data, self.view_distance).await;
+		write_varint(&mut packet_data, self.simulation_distance).await;
+		write_bool(&mut packet_data, self.reduced_debug_info).await;
+		write_bool(&mut packet_data, self.enable_respawn_screen).await;
+		write_bool(&mut packet_data, self.debug_world).await;
+		write_bool(&mut packet_data, self.is_flat).await;
 		match &self.death_location {
 			Some(location) => {
-				write_bool(&mut packet_data, true);
-				write_string(&mut packet_data, &location.dimension_name);
-				location.position.write(&mut packet_data);
+				write_bool(&mut packet_data, true).await;
+				write_string(&mut packet_data, &location.dimension_name).await;
+				location.position.write(&mut packet_data).await;
 			},
-			None => write_bool(&mut packet_data, false)
+			None => write_bool(&mut packet_data, false).await
 		};
 
-		write_packet(buffer, 0x24, packet_data);
+		write_packet(buffer, 0x24, packet_data).await;
 	}
 }

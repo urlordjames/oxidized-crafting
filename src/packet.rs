@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub mod packet_data;
 use packet_data::{read_varint, write_varint};
@@ -10,15 +10,15 @@ pub struct Packet {
 }
 
 impl Packet {
-	pub fn read<P: Read>(stream: &mut P) -> Self {
-		let length = read_varint(stream);
+	pub async fn read<P: AsyncReadExt + Unpin>(stream: &mut P) -> Self {
+		let length = read_varint(stream).await;
 
 		let mut id_and_data = vec![0; length as usize];
-		stream.read_exact(&mut id_and_data).unwrap();
+		stream.read_exact(&mut id_and_data).await.unwrap();
 
 		let mut cursor = std::io::Cursor::new(id_and_data);
 
-		let id = read_varint(&mut cursor);
+		let id = read_varint(&mut cursor).await;
 
 		Self {
 			id,
@@ -27,15 +27,15 @@ impl Packet {
 	}
 }
 
-pub fn write_packet<B: Write>(buffer: &mut B, id: u64, mut data: Vec<u8>) {
+pub async fn write_packet<B: AsyncWriteExt + Unpin>(buffer: &mut B, id: u64, mut data: Vec<u8>) {
 	let mut buf = vec![];
-	write_varint(&mut buf, id);
+	write_varint(&mut buf, id).await;
 	buf.append(&mut data);
 
 	let length = buf.len();
 
-	write_varint(buffer, length as u64);
-	buffer.write_all(&buf).unwrap();
+	write_varint(buffer, length as u64).await;
+	buffer.write_all(&buf).await.unwrap();
 }
 
 #[test]

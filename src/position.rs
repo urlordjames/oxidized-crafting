@@ -1,4 +1,4 @@
-use std::io::Write;
+use tokio::io::AsyncWriteExt;
 
 #[derive(Debug)]
 pub struct Position {
@@ -8,10 +8,10 @@ pub struct Position {
 }
 
 impl Position {
-	pub fn write<B: Write>(&self, buffer: &mut B) {
+	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
 		let val: i64 = ((i64::from(self.x).to_be() & 0x3ffffff) << 38) | ((i64::from(self.z).to_be() & 0x3ffffff) << 12) | (i64::from(self.y).to_be() & 0xfff);
 
-		buffer.write_all(&val.to_be_bytes()).unwrap();
+		buffer.write_all(&val.to_be_bytes()).await.unwrap();
 	}
 }
 

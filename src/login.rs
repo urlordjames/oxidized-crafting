@@ -1,7 +1,7 @@
 use crate::packet::{Packet, write_packet};
 use crate::packet::packet_data::{read_string, read_bool, read_uuid, write_uuid, write_string, write_varint};
 
-use std::io::Write;
+use tokio::io::AsyncWriteExt;
 
 #[derive(Debug)]
 pub struct LoginStart {
@@ -10,15 +10,15 @@ pub struct LoginStart {
 }
 
 impl LoginStart {
-	pub fn read(packet: &mut Packet) -> Self {
+	pub async fn read(packet: &mut Packet) -> Self {
 		assert_eq!(packet.id, 0x00);
 
-		let name = read_string(&mut packet.data);
+		let name = read_string(&mut packet.data).await;
 
-		match read_bool(&mut packet.data) {
+		match read_bool(&mut packet.data).await {
 			true => Self {
 				name,
-				uuid: Some(read_uuid(&mut packet.data))
+				uuid: Some(read_uuid(&mut packet.data).await)
 			},
 			false => Self {
 				name,
@@ -34,12 +34,12 @@ pub struct LoginSuccess<'a> {
 }
 
 impl<'a> LoginSuccess<'a> {
-	pub fn write<B: Write>(&self, buffer: &mut B) {
+	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
 		let mut packet_data = vec![];
-		write_uuid(&mut packet_data, self.uuid);
-		write_string(&mut packet_data, self.username);
-		write_varint(&mut packet_data, 0);
+		write_uuid(&mut packet_data, self.uuid).await;
+		write_string(&mut packet_data, self.username).await;
+		write_varint(&mut packet_data, 0).await;
 
-		write_packet(buffer, 0x02, packet_data);
+		write_packet(buffer, 0x02, packet_data).await;
 	}
 }
