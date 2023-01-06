@@ -1,5 +1,6 @@
 use crate::packet::write_packet;
 use crate::packet::packet_data::write_string;
+use crate::text::Text;
 
 use std::io::Write;
 use serde::Serialize;
@@ -22,12 +23,6 @@ struct Players {
 	online: u64,
 	#[serde(skip_serializing_if = "Vec::is_empty")]
 	sample: Vec<Player>
-}
-
-// maybe move this into it's own file if this is used elsewhere?
-#[derive(Debug, Serialize)]
-struct Text {
-	text: String
 }
 
 #[derive(Debug, Serialize)]
@@ -54,9 +49,7 @@ impl std::default::Default for StatusResponse {
 				online: 0,
 				sample: vec![]
 			},
-			description: Text {
-				text: String::from("oxidized crafting")
-			},
+			description: Text::from("oxidized crafting"),
 			favicon: None,
 			previews_chat: false,
 			enforces_secure_chat: false

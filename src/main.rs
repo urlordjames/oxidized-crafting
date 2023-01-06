@@ -2,13 +2,16 @@ use std::net::{TcpListener, TcpStream};
 
 mod packet;
 use packet::{Packet, write_packet};
-use packet::packet_data::{read_long, write_long, write_string};
+use packet::packet_data::{read_long, write_long};
 
 mod handshake;
 use handshake::Handshake;
 
 mod state;
 use state::{State, LoginState, PlayerInfo};
+
+mod text;
+use text::Text;
 
 mod status;
 use status::StatusResponse;
@@ -78,12 +81,9 @@ fn handle_client(stream: &mut TcpStream) {
 				login.write(stream);
 			},
 			(_, State::Play(_)) => {
-				let mut reason_buf = vec![];
-				write_string(&mut reason_buf, r#"{
-					"text": "TODO: implement play state"
-				}"#);
+				let reason = Text::from("TODO: implement play state");
 
-				write_packet(stream, 0x17, reason_buf);
+				write_packet(stream, 0x17, serde_json::to_vec(&reason).unwrap());
 				return;
 			},
 			(id, state) => todo!("TODO: implement packet with id {:x} in state {:?}", id, state)
