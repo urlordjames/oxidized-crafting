@@ -1,5 +1,7 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
+// TODO: make use of Async*Ext's extra stuff
+
 pub async fn read_varint<P: AsyncReadExt + Unpin>(stream: &mut P) -> u64 {
 	const CONTINUE_BIT: u8 = 0x80;
 	const SEGMENT_MASK: u8 = 0x7F;
