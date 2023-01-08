@@ -31,7 +31,7 @@ use play::Login;
 async fn main() {
 	let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
 
-	broadcast_lan();
+	broadcast_lan().await;
 
 	loop {
 		let (mut stream, _) = listener.accept().await.unwrap();
