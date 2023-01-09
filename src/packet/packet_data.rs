@@ -1,21 +1,18 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-// TODO: make use of Async*Ext's extra stuff
-
 pub async fn read_varint<P: AsyncReadExt + Unpin>(stream: &mut P) -> u64 {
 	const CONTINUE_BIT: u8 = 0x80;
 	const SEGMENT_MASK: u8 = 0x7F;
 
 	let mut value: u64 = 0;
 	let mut position: usize = 0;
-	let mut buf = [0; 1];
 
 	loop {
-		stream.read_exact(&mut buf).await.unwrap();
+		let byte = stream.read_u8().await.unwrap();
 
-		value |= u64::from(buf[0] & SEGMENT_MASK).to_le() << position;
+		value |= u64::from(byte & SEGMENT_MASK).to_le() << position;
 
-		if buf[0] & CONTINUE_BIT == 0 {
+		if byte & CONTINUE_BIT == 0 {
 			break;
 		}
 
@@ -39,24 +36,15 @@ pub async fn read_string<P: AsyncReadExt + Unpin>(stream: &mut P) -> String {
 }
 
 pub async fn read_short<P: AsyncReadExt + Unpin>(stream: &mut P) -> u16 {
-	let mut buf = [0; 2];
-	stream.read_exact(&mut buf).await.unwrap();
-
-	u16::from_be_bytes(buf)
+	stream.read_u16().await.unwrap()
 }
 
 pub async fn read_long<P: AsyncReadExt + Unpin>(stream: &mut P) -> i64 {
-	let mut buf = [0; 8];
-	stream.read_exact(&mut buf).await.unwrap();
-
-	i64::from_be_bytes(buf)
+	stream.read_i64().await.unwrap()
 }
 
 pub async fn read_bool<P: AsyncReadExt + Unpin>(stream: &mut P) -> bool {
-	let mut buf = [0; 1];
-	stream.read_exact(&mut buf).await.unwrap();
-
-	match buf[0] {
+	match stream.read_u8().await.unwrap() {
 		0x00 => false,
 		0x01 => true,
 		_ => panic!("invalid bool")
@@ -64,17 +52,11 @@ pub async fn read_bool<P: AsyncReadExt + Unpin>(stream: &mut P) -> bool {
 }
 
 pub async fn read_uuid<P: AsyncReadExt + Unpin>(stream: &mut P) -> u128 {
-	let mut buf = [0; 16];
-	stream.read_exact(&mut buf).await.unwrap();
-
-	u128::from_be_bytes(buf)
+	stream.read_u128().await.unwrap()
 }
 
 pub async fn read_int<P: AsyncReadExt + Unpin>(stream: &mut P) -> i32 {
-	let mut buf = [0; 4];
-	stream.read_exact(&mut buf).await.unwrap();
-
-	i32::from_be_bytes(buf)
+	stream.read_i32().await.unwrap()
 }
 
 pub async fn write_varint<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u64) {
@@ -85,11 +67,11 @@ pub async fn write_varint<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u64) 
 
 	loop {
 		if (value & !SEGMENT_MASK) == 0 {
-			buffer.write_all(&[value as u8]).await.unwrap();
+			buffer.write_u8(value as u8).await.unwrap();
 			return;
 		}
 
-		buffer.write_all(&[((value & SEGMENT_MASK) | CONTINUE_BIT) as u8]).await.unwrap();
+		buffer.write_u8(((value & SEGMENT_MASK) | CONTINUE_BIT) as u8).await.unwrap();
 
 		value >>= 7;
 	}
@@ -103,34 +85,26 @@ pub async fn write_string<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: &str)
 }
 
 pub async fn write_short<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u16) {
-	let bytes = value.to_be_bytes();
-
-	buffer.write_all(&bytes).await.unwrap();
+	buffer.write_u16(value).await.unwrap();
 }
 
 pub async fn write_long<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: i64) {
-	let bytes = value.to_be_bytes();
-
-	buffer.write_all(&bytes).await.unwrap();
+	buffer.write_i64(value).await.unwrap();
 }
 
 pub async fn write_bool<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: bool) {
-	buffer.write_all(&[match value {
+	buffer.write_u8(match value {
 		false => 0x00,
 		true => 0x01
-	}]).await.unwrap();
+	}).await.unwrap();
 }
 
 pub async fn write_uuid<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: u128) {
-	let bytes = value.to_be_bytes();
-
-	buffer.write_all(&bytes).await.unwrap();
+	buffer.write_u128(value).await.unwrap();
 }
 
 pub async fn write_int<B: AsyncWriteExt + Unpin>(buffer: &mut B, value: i32) {
-	let bytes = value.to_be_bytes();
-
-	buffer.write_all(&bytes).await.unwrap();
+	buffer.write_i32(value).await.unwrap();
 }
 
 #[tokio::test]
@@ -159,7 +133,7 @@ async fn test_string() {
 
 #[tokio::test]
 async fn test_short() {
-	let val = u16::MAX;
+	let val = 12345;
 	let mut buf = vec![];
 
 	write_short(&mut buf, val).await;
