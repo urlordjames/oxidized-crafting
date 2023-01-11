@@ -34,10 +34,11 @@ async fn main() {
 	broadcast_lan().await;
 
 	loop {
-		let (mut stream, _) = listener.accept().await.unwrap();
-		tokio::spawn(async move {
-			handle_client(&mut stream).await;
-		});
+		if let Ok((mut stream, _)) = listener.accept().await {
+			tokio::spawn(async move {
+				handle_client(&mut stream).await;
+			});
+		}
 	}
 }
 
