@@ -1,6 +1,7 @@
 use crate::packet::write_packet;
 use crate::packet::packet_data::write_string;
 use crate::text::Text;
+use crate::{GAME_VERSION, PROTOCOL_VERSION};
 
 use tokio::io::AsyncWriteExt;
 use serde::Serialize;
@@ -41,8 +42,8 @@ impl std::default::Default for StatusResponse {
 	fn default() -> Self {
 		Self {
 			version: Version {
-				name: String::from("1.19"),
-				protocol: 761
+				name: String::from(GAME_VERSION),
+				protocol: PROTOCOL_VERSION
 			},
 			players: Players {
 				max: 20,

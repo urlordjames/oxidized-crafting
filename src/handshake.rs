@@ -1,6 +1,6 @@
 use crate::packet::Packet;
 use crate::packet::packet_data::{read_varint, read_string, read_short};
-use crate::{State, LoginState};
+use crate::{State, LoginState, PROTOCOL_VERSION};
 
 #[derive(Debug)]
 pub struct Handshake {
@@ -16,7 +16,7 @@ impl Handshake {
 
 		let protocol_version = read_varint(&mut packet.data).await;
 
-		assert_eq!(protocol_version, 761);
+		assert_eq!(protocol_version, PROTOCOL_VERSION);
 
 		let address = read_string(&mut packet.data).await;
 		let port = read_short(&mut packet.data).await;

@@ -27,6 +27,9 @@ pub mod position;
 mod play;
 use play::Login;
 
+pub const GAME_VERSION: &str = "1.20.1";
+pub const PROTOCOL_VERSION: u64 = 763;
+
 #[tokio::main]
 async fn main() {
 	let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();

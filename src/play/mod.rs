@@ -62,7 +62,8 @@ pub struct Login {
 	enable_respawn_screen: bool,
 	debug_world: bool,
 	is_flat: bool,
-	death_location: Option<Location>
+	death_location: Option<Location>,
+	portal_cooldown: u64
 }
 
 impl std::default::Default for Login {
@@ -83,7 +84,8 @@ impl std::default::Default for Login {
 			enable_respawn_screen: true,
 			debug_world: true,
 			is_flat: false,
-			death_location: None
+			death_location: None,
+			portal_cooldown: 0
 		}
 	}
 }
@@ -95,13 +97,13 @@ impl Login {
 		write_bool(&mut packet_data, self.is_hardcore).await;
 		self.gamemode.write(&mut packet_data).await;
 		self.previous_gamemode.write(&mut packet_data).await;
-		write_varint(&mut packet_data, self.dimensions.len() as u64).await;
 		assert_eq!(self.dimensions.len(), 0); // lets just ignore this for now...
+		write_varint(&mut packet_data, self.dimensions.len() as u64).await;
 		quartz_nbt::serde::serialize_into(&mut packet_data, &self.registry_codec, None, Flavor::Uncompressed).unwrap();
 		write_string(&mut packet_data, &self.current_dimension_type).await;
 		write_string(&mut packet_data, &self.current_dimension_name).await;
 		write_long(&mut packet_data, self.hashed_seed).await;
-		write_varint(&mut packet_data, 0).await;
+		write_varint(&mut packet_data, 0).await; // ignored
 		write_varint(&mut packet_data, self.view_distance).await;
 		write_varint(&mut packet_data, self.simulation_distance).await;
 		write_bool(&mut packet_data, self.reduced_debug_info).await;
@@ -116,7 +118,8 @@ impl Login {
 			},
 			None => write_bool(&mut packet_data, false).await
 		};
+		write_varint(&mut packet_data, self.portal_cooldown).await;
 
-		write_packet(buffer, 0x24, packet_data).await;
+		write_packet(buffer, 0x28, packet_data).await;
 	}
 }
