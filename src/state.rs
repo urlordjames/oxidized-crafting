@@ -1,9 +1,4 @@
 #[derive(Debug)]
-pub enum LoginState {
-	PostHandshake
-}
-
-#[derive(Debug)]
 pub struct PlayerInfo {
 	pub name: String,
 	pub uuid: Option<u128>
@@ -13,7 +8,7 @@ pub struct PlayerInfo {
 pub enum State {
 	Handshake,
 	Status,
-	Login(LoginState),
+	Login,
 	Play(PlayerInfo)
 }
 

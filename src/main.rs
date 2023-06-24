@@ -11,7 +11,7 @@ mod handshake;
 use handshake::Handshake;
 
 mod state;
-use state::{State, LoginState, PlayerInfo};
+use state::{State, PlayerInfo};
 
 mod text;
 use text::Text;
@@ -74,7 +74,7 @@ async fn handle_client(stream: &mut TcpStream) {
 				write_packet(stream, 0x01, pong_buf).await;
 				return;
 			},
-			(0x00, State::Login(LoginState::PostHandshake)) => {
+			(0x00, State::Login) => {
 				let login_start = LoginStart::read(&mut packet).await;
 				println!("{login_start:?}");
 
