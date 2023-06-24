@@ -52,12 +52,12 @@ async fn handle_client(stream: &mut TcpStream) {
 
 	loop {
 		let mut packet = Packet::read(stream).await;
-		println!("{:?}", packet);
+		println!("{packet:?}");
 
 		match (packet.id, &state) {
 			(0x00, State::Handshake) => {
 				let handshake = Handshake::read(&mut packet).await;
-				println!("{:?}", handshake);
+				println!("{handshake:?}");
 
 				state = handshake.next_state;
 			},
@@ -76,7 +76,7 @@ async fn handle_client(stream: &mut TcpStream) {
 			},
 			(0x00, State::Login(LoginState::PostHandshake)) => {
 				let login_start = LoginStart::read(&mut packet).await;
-				println!("{:?}", login_start);
+				println!("{login_start:?}");
 
 				state = State::Play(PlayerInfo {
 					name: login_start.name,

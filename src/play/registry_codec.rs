@@ -1,17 +1,9 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct RegistryCodec {
 	#[serde(rename = "minecraft:dimension_type")]
 	dimension_type: Dimensions
-}
-
-impl std::default::Default for RegistryCodec {
-	fn default() -> Self {
-		Self {
-			dimension_type: Dimensions::default()
-		}
-	}
 }
 
 #[derive(Serialize, Deserialize)]

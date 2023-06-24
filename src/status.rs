@@ -61,7 +61,7 @@ impl std::default::Default for StatusResponse {
 impl StatusResponse {
 	pub async fn write<B: AsyncWriteExt + Unpin>(&self, buffer: &mut B) {
 		let stringified = serde_json::to_string(self).unwrap();
-		println!("{}", stringified);
+		println!("{stringified}");
 
 		let mut packet_data = vec![];
 		write_string(&mut packet_data, &stringified).await;
